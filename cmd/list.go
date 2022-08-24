@@ -109,6 +109,8 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 				console.PrintEntryListSearched(entries, searchStart, searchEnd)
 			case "pretty-compact", "pc":
 				console.PrintEntryListCompact(entries)
+			case "work", "w":
+				console.PrintEntryListWork(entries)
 			case "json":
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")

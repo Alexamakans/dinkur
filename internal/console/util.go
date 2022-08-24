@@ -29,6 +29,15 @@ import (
 // FormatDuration returns a formatted time.Duration in the format of
 // h:mm:ss.
 func FormatDuration(d time.Duration) string {
+	if d.Seconds() < 0 {
+		var (
+			totalSeconds = -int(d.Seconds())
+			hours        = totalSeconds / 60 / 60
+			minutes      = totalSeconds / 60 % 60
+			seconds      = totalSeconds % 60
+		)
+		return fmt.Sprintf("-%d:%02d:%02d", hours, minutes, seconds)
+	}
 	var (
 		totalSeconds = int(d.Seconds())
 		hours        = totalSeconds / 60 / 60
