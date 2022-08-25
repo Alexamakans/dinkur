@@ -44,7 +44,7 @@ func FormatDuration(d time.Duration) string {
 		minutes      = totalSeconds / 60 % 60
 		seconds      = totalSeconds % 60
 	)
-	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+	return fmt.Sprintf("%2d:%02d:%02d", hours, minutes, seconds)
 }
 
 type group interface {
