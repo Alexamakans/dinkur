@@ -22,6 +22,7 @@ package console
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"regexp"
 	"strings"
@@ -423,10 +424,14 @@ func PrintEntryListWork(entries []dinkur.Entry) {
 					weekDuration := FormatDuration(weekSum.duration)
 					wkDay := time.Now().UTC().Weekday()
 					expectedHoursWorkedAfterToday := (time.Hour * 8) * time.Duration(wkDay)
-					_, curWeekWeek := time.Now().ISOWeek()
+					_, curWeekWeek := time.Now().UTC().ISOWeek()
 					curWeek := fmt.Sprintf("%d", curWeekWeek)
 					if curWeek != weekGroup.String() {
-						expectedHoursWorkedAfterToday = time.Hour * 40
+						e := weekGroup.getEntries()[0]
+						t := e.Start
+						startWeekdayInMonth := getFirstWeekdayOfISOWeekInMonth(t)
+						sub := int(math.Max(0, float64(startWeekdayInMonth)-1))
+						expectedHoursWorkedAfterToday = time.Hour * time.Duration(8*(5-sub))
 					}
 					cellStr := fmt.Sprintf("Σ Week %s = %s (%s)", weekGroup, weekDuration, FormatDuration(weekSum.duration-expectedHoursWorkedAfterToday))
 					t.WriteCellColor(cellStr, tableWeekSummaryColor)

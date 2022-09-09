@@ -261,3 +261,14 @@ func timesPtrsEqual(a, b *time.Time) bool {
 	}
 	return timesEqual(*a, *b)
 }
+
+func getFirstWeekdayOfISOWeekInMonth(t time.Time) time.Weekday {
+	m := t.Month()
+	for t.Weekday() != time.Monday {
+		t = t.AddDate(0, 0, -1)
+	}
+	for t.Month() != m {
+		t = t.AddDate(0, 0, 1)
+	}
+	return t.Weekday()
+}
