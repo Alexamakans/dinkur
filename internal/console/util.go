@@ -29,14 +29,9 @@ import (
 // FormatDuration returns a formatted time.Duration in the format of
 // h:mm:ss.
 func FormatDuration(d time.Duration) string {
-	if d.Seconds() < 0 {
-		var (
-			totalSeconds = -int(d.Seconds())
-			hours        = totalSeconds / 60 / 60
-			minutes      = totalSeconds / 60 % 60
-			seconds      = totalSeconds % 60
-		)
-		return fmt.Sprintf("-%d:%02d:%02d", hours, minutes, seconds)
+	negative := d < 0
+	if negative {
+		d = -d
 	}
 	var (
 		totalSeconds = int(d.Seconds())
@@ -44,7 +39,10 @@ func FormatDuration(d time.Duration) string {
 		minutes      = totalSeconds / 60 % 60
 		seconds      = totalSeconds % 60
 	)
-	return fmt.Sprintf("%2d:%02d:%02d", hours, minutes, seconds)
+	if negative {
+		return fmt.Sprintf("-%d:%02d:%02d", hours, minutes, seconds)
+	}
+	return fmt.Sprintf("%d:%02d:%02d", hours, minutes, seconds)
 }
 
 type group interface {

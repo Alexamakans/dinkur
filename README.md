@@ -11,13 +11,14 @@ SPDX-License-Identifier: CC-BY-4.0
   <h1 style="color: #c43000">Dinkur</h1>
   <p>Task and time tracking CLI and framework.</p>
 
-  [![REUSE status](https://api.reuse.software/badge/github.com/dinkur/dinkur)](https://api.reuse.software/info/github.com/dinkur/dinkur)
-  [![Codacy Badge](https://app.codacy.com/project/badge/Grade/956b94a743244ce2a971ce572e05be3e)](https://www.codacy.com/gh/dinkur/dinkur/dashboard?utm_source=github.com&utm_medium=referral&utm_content=dinkur/dinkur&utm_campaign=Badge_Grade)
+[![REUSE status](https://api.reuse.software/badge/github.com/dinkur/dinkur)](https://api.reuse.software/info/github.com/dinkur/dinkur)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/956b94a743244ce2a971ce572e05be3e)](https://www.codacy.com/gh/dinkur/dinkur/dashboard?utm_source=github.com\&utm_medium=referral\&utm_content=dinkur/dinkur\&utm_campaign=Badge_Grade)
+
 </div>
 
 ## Install
 
-Requires [Go](https://go.dev/) v1.18beta1 (or higher)
+Requires [Go](https://go.dev/) v1.20 (or higher)
 
 ```console
 $ go install -tags='fts5' -ldflags='-s -w' github.com/dinkur/dinkur@latest
@@ -29,10 +30,10 @@ $ go install -tags='fts5' -ldflags='-s -w' github.com/dinkur/dinkur@latest
 > The `-ldflag='-s -w'` removes debug symbols, reducing the binary size from
 > about 34M down to 13M.
 
-For you CLI-power users, we recommend aliasing it to `ur`.
+For you CLI-power users, we recommend aliasing it to `u`.
 
 ```sh
-alias ur=dinkur
+alias u=dinkur
 ```
 
 ### CLI Autocompletion
@@ -73,23 +74,21 @@ dinkur --client=grpc status
 ## Usage
 
 ```console
-$ ur in Speedrun Minecraft
+$ u in Speedrun Minecraft
                 ID  NAME                  START  END      DURATION
 Started entry:  #1  `Speedrun Minecraft`  18:39  active…  -
 
-$ ur in Boil minute-rice
+$ u in Boil minute-rice
                 ID  NAME                  START  END      DURATION
 Stopped entry:  #1  `Speedrun Minecraft`  18:39  18:39    0:00:06
 Started entry:  #2  `Boil minute-rice`    18:39  active…  -
 
-$ ur out
+$ u out
                 ID  NAME                START  END    DURATION
 Stopped entry:  #2  `Boil minute-rice`  18:39  18:40  0:01:01
 
-$ ur list
+$ u list
   ID  NAME                  DAY     START  END    DURATION
-
-
   #1  `Speedrun Minecraft`  Jan-20  18:39  18:39  0:00:06
   #2  `Boil minute-rice`    -       18:39  18:40  0:01:01
 
@@ -107,11 +106,11 @@ how to set up your development environment, if you so feel inclined.
 
 <!--lint disable maximum-line-length-->
 
-| Project         | License?       | CLI? | GUI? | Sync?    | AFK detect?    | OS?                   |
-| --------------- | -------------- | ---- | ---- | -------- | -------------- | --------------------- |
-| [Grindstone][g] | Proprietary    | ❌   | ✅   | ✅ _($)_ | ✅ _(Windows)_ | Windows, Android, iOS |
-| [𝑓𝑓][ff]        | FOSS _(GPLv3)_ | ✅   | ✅   | ✅       | ❌             | Linux, Mac, Android   |
-| [timetrap][t]   | OSS _(MIT)_    | ✅   | ❌   | ❌       | ❌             | Windows, Linux, Mac   |
+| Project         | License?       | CLI? | GUI? | Sync?   | AFK detect?   | OS?                   |
+| --------------- | -------------- | ---- | ---- | ------- | ------------- | --------------------- |
+| [Grindstone][g] | Proprietary    | ❌    | ✅    | ✅ *($)* | ✅ *(Windows)* | Windows, Android, iOS |
+| [𝑓𝑓][ff]      | FOSS *(GPLv3)* | ✅    | ✅    | ✅       | ❌             | Linux, Mac, Android   |
+| [timetrap][t]   | OSS *(MIT)*    | ✅    | ❌    | ❌       | ❌             | Windows, Linux, Mac   |
 
 <!--lint enable maximum-line-length-->
 
@@ -129,5 +128,7 @@ and documentation is licensed under Creative Commons Attribution 4.0
 International ([LICENSES/CC-BY-4.0.txt](LICENSES/CC-BY-4.0.txt)).
 
 [g]: https://epiforge.com/grindstone
+
 [ff]: https://github.com/ff-notes/ff
+
 [t]: https://github.com/samg/timetrap
