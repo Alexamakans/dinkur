@@ -300,7 +300,7 @@ func countWorkDaysSpecial(start, end time.Time, f func(s, e time.Time) bool) int
 	workDays := 0
 	dt := start
 	for {
-		if dt.Before(end) && (f == nil || f(dt, end)) {
+		if (dt == end || dt.Before(end)) && (f == nil || f(dt, end)) {
 			if dt.Weekday() != time.Saturday && dt.Weekday() != time.Sunday {
 				workDays++
 			}

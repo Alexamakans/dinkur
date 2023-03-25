@@ -55,3 +55,25 @@ func TestGetISOTimeLastDayOfSameMonthWeek(t *testing.T) {
 		})
 	}
 }
+
+func TestCountWorkdaysInSameMonthWeek(t *testing.T) {
+	testCases := []struct {
+		start time.Time
+		want  int
+	}{
+		{
+			start: time.Date(2023, 2, 27, 12, 0, 0, 0, time.UTC),
+			want:  2,
+		},
+	}
+
+	for idx, tc := range testCases {
+		t.Run(fmt.Sprintf("testCase idx %d", idx), func(t *testing.T) {
+			fmt.Printf("count workdays idx %d\n", idx)
+			got := countWorkdaysInSameMonthWeek(tc.start)
+			if got != tc.want {
+				t.Errorf("got %v; wanted %v", got, tc.want)
+			}
+		})
+	}
+}
