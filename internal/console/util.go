@@ -26,6 +26,9 @@ import (
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
+const firstWeekday = time.Sunday
+const lastWeekday = time.Saturday
+
 // FormatDuration returns a formatted time.Duration in the format of
 // h:mm:ss.
 func FormatDuration(d time.Duration) string {
@@ -110,6 +113,19 @@ type month struct {
 
 func (m month) String() string {
 	return fmt.Sprintf("%s", m.month.String()[:3])
+}
+
+func (year) new(t time.Time) groupable {
+	_year := t.Year()
+	return year{_year}
+}
+
+type year struct {
+	year int
+}
+
+func (y year) String() string {
+	return fmt.Sprintf("%d", y.year)
 }
 
 type groupable interface {
@@ -269,4 +285,59 @@ func getFirstWeekdayOfISOWeekInMonth(t time.Time) time.Weekday {
 		t = t.AddDate(0, 0, 1)
 	}
 	return t.Weekday()
+}
+
+func countWorkDays(start, end time.Time) int {
+	return countWorkDaysSpecial(start, end, nil)
+}
+
+func countWorkDaysSpecial(start, end time.Time, f func(s, e time.Time) bool) int {
+	workDays := 0
+	dt := start
+	for {
+		if dt.Before(end) && (f == nil || f(dt, end)) {
+			if dt.Weekday() != time.Saturday && dt.Weekday() != time.Sunday {
+				workDays++
+			}
+			dt = dt.Add(time.Hour * 24)
+		} else {
+			break
+		}
+	}
+
+	return workDays
+}
+
+func countWorkdaysInSameMonthWeek(start time.Time) int {
+	return countWorkDays(getISOTimeFirstDayInSameMonthWeek(start), getISOTimeLastDayInSameMonthWeek(start))
+}
+
+func getISOTimeFirstDayInSameMonthWeek(t time.Time) time.Time {
+	start := t
+	for t.Weekday() != firstWeekday && t.Month() == start.Month() {
+		t = t.Add(time.Hour * -24)
+	}
+	if t.Month() != start.Month() {
+		t = t.Add(time.Hour * 24)
+	}
+	if t.Month() != start.Month() {
+		panic("failed, month is not equal")
+	}
+	return t
+}
+
+func getISOTimeLastDayInSameMonthWeek(t time.Time) time.Time {
+	start := t
+	t = getISOTimeFirstDayInSameMonthWeek(t)
+	for t.Weekday() != lastWeekday && t.Month() == start.Month() {
+		t = t.Add(time.Hour * 24)
+		fmt.Println(t.Weekday().String(), t.Month().String(), t)
+	}
+	if t.Month() != start.Month() {
+		t = t.Add(time.Hour * -24)
+	}
+	if t.Month() != start.Month() {
+		panic("failed, month is not equal")
+	}
+	return t
 }

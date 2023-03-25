@@ -47,6 +47,7 @@ var (
 	entryNameQuote            = "`"
 	entryNameFormat           = entryNameQuote + "%s" + entryNameQuote
 	entryTimeDelimColor       = color.New(color.FgHiBlack)
+	entryYearColor            = color.New(color.FgGreen)
 	entryMonthColor           = color.New(color.FgGreen)
 	entryWeekColor            = color.New(color.FgGreen)
 	entryDayColor             = color.New(color.FgGreen)
@@ -73,6 +74,7 @@ var (
 	tableSummaryColor      = color.New(color.FgHiBlack, color.Italic)
 	tableWeekSummaryColor  = color.New(color.FgHiBlack)
 	tableMonthSummaryColor = color.New(color.FgHiBlack)
+	tableYearSummaryColor  = color.New(color.FgHiCyan)
 	tableCellEmptyText     = "-"
 	tableCellEmptyColor    = color.New(color.FgHiBlack)
 
@@ -187,79 +189,111 @@ func PrintEntryListSearched(entries []dinkur.Entry, searchStart, searchEnd strin
 	var t table
 	t.SetSpacing("  ")
 	t.SetPrefix("  ")
-	t.WriteColoredRow(tableHeaderColor, "ID", "NAME", "WEEK", "MONTH", "DAY", "START", "END", "DURATION")
-	monthGroups := groupEntries(&entryGroup{groupBy: month{}}, entries)
-	for monthGroupIndex, monthGroup := range monthGroups {
-		if monthGroupIndex > 0 {
+	t.WriteColoredRow(tableHeaderColor, "ID", "NAME", "YEAR", "WEEK", "MONTH", "DAY", "START", "END", "DURATION")
+	yearGroups := groupEntries(&entryGroup{groupBy: year{}}, entries)
+	for yearGroupIndex, yearGroup := range yearGroups {
+		if yearGroupIndex > 0 {
 			t.CommitRow() // commit empty delimiting row between different months
 		}
-		weekGroups := groupEntries(&entryGroup{groupBy: week{}}, monthGroup.getEntries())
-		for weekGroupIndex, weekGroup := range weekGroups {
-			if weekGroupIndex > 0 {
-				t.CommitRow() // commit empty delimiting row between different weeks
+		monthGroups := groupEntries(&entryGroup{groupBy: month{}}, yearGroup.getEntries())
+		for monthGroupIndex, monthGroup := range monthGroups {
+			if monthGroupIndex > 0 {
+				t.CommitRow() // commit empty delimiting row between different months
 			}
-			dayGroups := groupEntries(&entryGroup{groupBy: day{}}, weekGroup.getEntries())
-			for dayGroupIndex, dayGroup := range dayGroups {
-				for entryIndex, entry := range dayGroup.getEntries() {
-					writeCellEntryID(&t, entry.ID)
-					if reg != nil {
-						writeCellEntryNameSearched(&t, entry.Name, reg)
-					} else {
-						writeCellEntryName(&t, entry.Name)
-					}
-					firstEntryInDay := entryIndex == 0
-					firstDayInWeek := dayGroupIndex == 0
-					firstEntryInWeek := firstDayInWeek && firstEntryInDay
-					firstWeekInMonth := weekGroupIndex == 0
-					firstEntryInMonth := firstWeekInMonth && firstEntryInWeek
-					if firstEntryInWeek {
-						writeCellWeek(&t, weekGroup)
-					} else {
-						t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
-					}
-					if firstEntryInMonth {
-						writeCellMonth(&t, monthGroup)
-					} else {
-						t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
-					}
-					if firstEntryInDay {
-						writeCellDay(&t, dayGroup)
-					} else {
-						t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
-					}
-					writeCellEntryStartEnd(&t, entry.Start, entry.End)
-					writeCellDuration(&t, entry.Elapsed())
-
-					lastDayInWeekGroup := dayGroupIndex == len(dayGroups)-1
-					lastEntryInDayGroup := entryIndex == dayGroup.count()-1
-					lastEntryOfWeek := lastDayInWeekGroup && lastEntryInDayGroup
-					if lastEntryOfWeek {
-						weekSum := sumEntries(weekGroup.getEntries())
-						weekDuration := FormatDuration(weekSum.duration)
-						weekSumStr := fmt.Sprintf("Σ Week %s = %s", weekGroup, weekDuration)
-						t.WriteCellColor(weekSumStr, tableWeekSummaryColor)
-
-						lastWeekInMonthGroup := weekGroupIndex == len(weekGroups)-1
-						lastEntryOfMonth := lastEntryOfWeek && lastWeekInMonthGroup
-						if lastEntryOfMonth {
-							t.CommitRow()
-							monthSum := sumEntries(monthGroup.getEntries())
-							monthDuration := FormatDuration(monthSum.duration)
-							monthSumStr := fmt.Sprintf("Σ Month %s = %s", monthGroup, monthDuration)
-							t.WriteColoredRow(tableMonthSummaryColor,
-								tableCellEmptyText, // ID
-								tableCellEmptyText, // NAME
-								tableCellEmptyText, // WEEK
-								tableCellEmptyText, // MONTH
-								tableCellEmptyText, // DAY
-								tableCellEmptyText, // START
-								tableCellEmptyText, // END
-								tableCellEmptyText, // DURATION
-								monthSumStr,
-							)
+			weekGroups := groupEntries(&entryGroup{groupBy: week{}}, monthGroup.getEntries())
+			for weekGroupIndex, weekGroup := range weekGroups {
+				if weekGroupIndex > 0 {
+					t.CommitRow() // commit empty delimiting row between different weeks
+				}
+				dayGroups := groupEntries(&entryGroup{groupBy: day{}}, weekGroup.getEntries())
+				for dayGroupIndex, dayGroup := range dayGroups {
+					for entryIndex, entry := range dayGroup.getEntries() {
+						writeCellEntryID(&t, entry.ID)
+						if reg != nil {
+							writeCellEntryNameSearched(&t, entry.Name, reg)
+						} else {
+							writeCellEntryName(&t, entry.Name)
 						}
+						firstEntryInDay := entryIndex == 0
+						firstDayInWeek := dayGroupIndex == 0
+						firstEntryInWeek := firstDayInWeek && firstEntryInDay
+						firstWeekInMonth := weekGroupIndex == 0
+						firstEntryInMonth := firstWeekInMonth && firstEntryInWeek
+						firstMonthInYear := monthGroupIndex == 0
+						firstEntryInYear := firstMonthInYear && firstEntryInMonth
+						if firstEntryInYear {
+							writeCellWeek(&t, yearGroup)
+						} else {
+							t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+						}
+						if firstEntryInWeek {
+							writeCellWeek(&t, weekGroup)
+						} else {
+							t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+						}
+						if firstEntryInMonth {
+							writeCellMonth(&t, monthGroup)
+						} else {
+							t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+						}
+						if firstEntryInDay {
+							writeCellDay(&t, dayGroup)
+						} else {
+							t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+						}
+						writeCellEntryStartEnd(&t, entry.Start, entry.End)
+						writeCellDuration(&t, entry.Elapsed())
+
+						lastDayInWeekGroup := dayGroupIndex == len(dayGroups)-1
+						lastEntryInDayGroup := entryIndex == dayGroup.count()-1
+						lastEntryOfWeek := lastDayInWeekGroup && lastEntryInDayGroup
+						if lastEntryOfWeek {
+							weekSum := sumEntries(weekGroup.getEntries())
+							weekDuration := FormatDuration(weekSum.duration)
+							weekSumStr := fmt.Sprintf("Σ Week %s = %s", weekGroup, weekDuration)
+							t.WriteCellColor(weekSumStr, tableWeekSummaryColor)
+
+							lastWeekInMonthGroup := weekGroupIndex == len(weekGroups)-1
+							lastEntryOfMonth := lastEntryOfWeek && lastWeekInMonthGroup
+							if lastEntryOfMonth {
+								t.CommitRow()
+								monthSum := sumEntries(monthGroup.getEntries())
+								monthDuration := FormatDuration(monthSum.duration)
+								monthSumStr := fmt.Sprintf("Σ Month %s = %s", monthGroup, monthDuration)
+								t.WriteColoredRow(tableMonthSummaryColor,
+									tableCellEmptyText, // ID
+									tableCellEmptyText, // NAME
+									tableCellEmptyText, // YEAR
+									tableCellEmptyText, // WEEK
+									tableCellEmptyText, // MONTH
+									tableCellEmptyText, // DAY
+									tableCellEmptyText, // START
+									tableCellEmptyText, // END
+									tableCellEmptyText, // DURATION
+									monthSumStr,
+								)
+
+								lastMonthInYearGroup := monthGroupIndex == len(monthGroups)-1
+								lastEntryOfYear := lastEntryOfMonth && lastMonthInYearGroup
+								if lastEntryOfYear {
+									t.CommitRow()
+									yearSum := sumEntries(yearGroup.getEntries())
+									yearDuration := FormatDuration(yearSum.duration)
+									cellStr := fmt.Sprintf("Σ Year %s = %s", yearGroup, yearDuration)
+									t.WriteColoredRow(
+										tableMonthSummaryColor,
+										tableCellEmptyText, // YEAR
+										tableCellEmptyText, // WEEK
+										tableCellEmptyText, // MONTH
+										tableCellEmptyText, // DAY
+										tableCellEmptyText, // DURATION
+										cellStr,
+									)
+								}
+							}
+						}
+						t.CommitRow()
 					}
-					t.CommitRow()
 				}
 			}
 		}
@@ -274,6 +308,7 @@ func PrintEntryListSearched(entries []dinkur.Entry, searchStart, searchEnd strin
 	t.WriteColoredRow(tableSummaryColor,
 		tableCellEmptyText, // ID
 		fmt.Sprintf("TOTAL: %d entries", len(entries)), // NAME
+		tableCellEmptyText,                // YEAR
 		tableCellEmptyText,                // WEEK
 		tableCellEmptyText,                // MONTH
 		tableCellEmptyText,                // DAY
@@ -296,64 +331,95 @@ func PrintEntryListCompact(entries []dinkur.Entry) {
 	var t table
 	t.SetSpacing("  ")
 	t.SetPrefix("  ")
-	t.WriteColoredRow(tableHeaderColor, "WEEK", "MONTH", "DAY", "DURATION")
-	monthGroups := groupEntries(&entryGroup{groupBy: month{}}, entries)
-	for monthGroupIndex, monthGroup := range monthGroups {
-		if monthGroupIndex > 0 {
-			t.CommitRow() // commit empty delimiting row between different months
+	t.WriteColoredRow(tableHeaderColor, "YEAR", "WEEK", "MONTH", "DAY", "DURATION")
+	yearGroups := groupEntries(&entryGroup{groupBy: year{}}, entries)
+	for yearGroupIndex, yearGroup := range yearGroups {
+		if yearGroupIndex > 0 {
+			t.CommitRow() // commit empty delimiting row between different years
 		}
-		weekGroups := groupEntries(&entryGroup{groupBy: week{}}, monthGroup.getEntries())
-		for weekGroupIndex, weekGroup := range weekGroups {
-			if weekGroupIndex > 0 {
-				t.CommitRow() // commit empty delimiting row between different weeks
+		monthGroups := groupEntries(&entryGroup{groupBy: month{}}, yearGroup.getEntries())
+		for monthGroupIndex, monthGroup := range monthGroups {
+			if monthGroupIndex > 0 {
+				t.CommitRow() // commit empty delimiting row between different months
 			}
-			dayGroups := groupEntries(&entryGroup{groupBy: day{}}, weekGroup.getEntries())
-			for dayGroupIndex, dayGroup := range dayGroups {
-				firstDayInWeek := dayGroupIndex == 0
-				firstEntryInWeek := firstDayInWeek
-				firstWeekInMonth := weekGroupIndex == 0
-				firstEntryInMonth := firstWeekInMonth && firstEntryInWeek
-				if firstEntryInWeek {
-					writeCellWeek(&t, weekGroup)
-				} else {
-					t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+			weekGroups := groupEntries(&entryGroup{groupBy: week{}}, monthGroup.getEntries())
+			for weekGroupIndex, weekGroup := range weekGroups {
+				if weekGroupIndex > 0 {
+					t.CommitRow() // commit empty delimiting row between different weeks
 				}
-				if firstEntryInMonth {
-					writeCellMonth(&t, monthGroup)
-				} else {
-					t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
-				}
-				writeCellDay(&t, dayGroup)
-
-				daySum := sumEntries(dayGroup.getEntries())
-				writeCellDuration(&t, daySum.duration)
-
-				lastDayInWeekGroup := dayGroupIndex == len(dayGroups)-1
-				lastEntryOfWeek := lastDayInWeekGroup
-				if lastEntryOfWeek {
-					weekSum := sumEntries(weekGroup.getEntries())
-					weekDuration := FormatDuration(weekSum.duration)
-					cellStr := fmt.Sprintf("Σ Week %s = %s", weekGroup, weekDuration)
-					t.WriteCellColor(cellStr, tableWeekSummaryColor)
-
-					lastWeekInMonthGroup := weekGroupIndex == len(weekGroups)-1
-					lastEntryOfMonth := lastEntryOfWeek && lastWeekInMonthGroup
-					if lastEntryOfMonth {
-						t.CommitRow()
-						monthSum := sumEntries(monthGroup.getEntries())
-						monthDuration := FormatDuration(monthSum.duration)
-						cellStr := fmt.Sprintf("Σ Month %s = %s", monthGroup, monthDuration)
-						t.WriteColoredRow(
-							tableMonthSummaryColor,
-							tableCellEmptyText, // WEEK
-							tableCellEmptyText, // MONTH
-							tableCellEmptyText, // DAY
-							tableCellEmptyText, // DURATION
-							cellStr,
-						)
+				dayGroups := groupEntries(&entryGroup{groupBy: day{}}, weekGroup.getEntries())
+				for dayGroupIndex, dayGroup := range dayGroups {
+					firstDayInWeek := dayGroupIndex == 0
+					firstEntryInWeek := firstDayInWeek
+					firstWeekInMonth := weekGroupIndex == 0
+					firstEntryInMonth := firstWeekInMonth && firstEntryInWeek
+					firstMonthInYear := monthGroupIndex == 0
+					firstEntryInYear := firstMonthInYear && firstEntryInMonth
+					if firstEntryInYear {
+						writeCellYear(&t, yearGroup)
+					} else {
+						t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
 					}
+					if firstEntryInWeek {
+						writeCellWeek(&t, weekGroup)
+					} else {
+						t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+					}
+					if firstEntryInMonth {
+						writeCellMonth(&t, monthGroup)
+					} else {
+						t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+					}
+					writeCellDay(&t, dayGroup)
+
+					daySum := sumEntries(dayGroup.getEntries())
+					writeCellDuration(&t, daySum.duration)
+
+					lastDayInWeekGroup := dayGroupIndex == len(dayGroups)-1
+					lastEntryOfWeek := lastDayInWeekGroup
+					if lastEntryOfWeek {
+						weekSum := sumEntries(weekGroup.getEntries())
+						weekDuration := FormatDuration(weekSum.duration)
+						cellStr := fmt.Sprintf("Σ Week %s = %s", weekGroup, weekDuration)
+						t.WriteCellColor(cellStr, tableWeekSummaryColor)
+
+						lastWeekInMonthGroup := weekGroupIndex == len(weekGroups)-1
+						lastEntryOfMonth := lastEntryOfWeek && lastWeekInMonthGroup
+						if lastEntryOfMonth {
+							t.CommitRow()
+							monthSum := sumEntries(monthGroup.getEntries())
+							monthDuration := FormatDuration(monthSum.duration)
+							cellStr := fmt.Sprintf("Σ Month %s = %s", monthGroup, monthDuration)
+							t.WriteColoredRow(
+								tableMonthSummaryColor,
+								tableCellEmptyText, // YEAR
+								tableCellEmptyText, // WEEK
+								tableCellEmptyText, // MONTH
+								tableCellEmptyText, // DAY
+								tableCellEmptyText, // DURATION
+								cellStr,
+							)
+
+							lastMonthInYearGroup := monthGroupIndex == len(monthGroups)-1
+							lastEntryOfYear := lastMonthInYearGroup
+							if lastEntryOfYear {
+								yearSum := sumEntries(yearGroup.getEntries())
+								yearDuration := FormatDuration(yearSum.duration)
+								cellStr := fmt.Sprintf("Σ Year %s = %s", yearGroup, yearDuration)
+								t.WriteColoredRow(
+									tableYearSummaryColor,
+									tableCellEmptyText, // YEAR
+									tableCellEmptyText, // WEEK
+									tableCellEmptyText, // MONTH
+									tableCellEmptyText, // DAY
+									tableCellEmptyText, // DURATION
+									cellStr,
+								)
+							}
+						}
+					}
+					t.CommitRow()
 				}
-				t.CommitRow()
 			}
 		}
 	}
@@ -361,6 +427,7 @@ func PrintEntryListCompact(entries []dinkur.Entry) {
 	sum := sumEntries(entries)
 	t.CommitRow() // commit empty delimiting row
 	t.WriteColoredRow(tableSummaryColor,
+		tableCellEmptyText,           // YEAR
 		tableCellEmptyText,           // WEEK
 		tableCellEmptyText,           // MONTH
 		tableCellEmptyText,           // DAY
@@ -379,106 +446,146 @@ func PrintEntryListWork(entries []dinkur.Entry) {
 	var t table
 	t.SetSpacing("  ")
 	t.SetPrefix("  ")
-	t.WriteColoredRow(tableHeaderColor, "WEEK", "MONTH", "DAY", "DURATION")
-	monthGroups := groupEntries(&entryGroup{groupBy: month{}}, entries)
-	onlySumThisAtEnd := monthGroups[len(monthGroups)-1]
-	for monthGroupIndex, monthGroup := range monthGroups {
-		grpMonth := fmt.Sprintf("%s", monthGroup.String()[:3])
-		cmpMonth := fmt.Sprintf("%s", time.Now().Month().String()[:3])
-		if grpMonth != cmpMonth {
+	yearGroups := groupEntries(&entryGroup{groupBy: year{}}, entries)
+	currentYearYearGroup := yearGroups[len(yearGroups)-1]
+	currentYearStr := fmt.Sprintf("%d", time.Now().Year())
+	if currentYearStr != currentYearYearGroup.String() {
+		t.WriteCellColor("No entries for current year", promptWarnIconColor)
+		t.Fprintln(stdout)
+		return
+	}
+
+	t.WriteColoredRow(tableHeaderColor, "YEAR", "WEEK", "MONTH", "DAY", "DURATION")
+	for yearGroupIndex, yearGroup := range yearGroups {
+		grpYearStr := yearGroup.String()
+		fmt.Println(grpYearStr, currentYearStr)
+		if grpYearStr != currentYearStr {
+			// Only list for current year
 			continue
 		}
-		if monthGroupIndex > 0 {
+		if yearGroupIndex > 0 {
 			t.CommitRow() // commit empty delimiting row between different months
 		}
-		weekGroups := groupEntries(&entryGroup{groupBy: week{}}, monthGroup.getEntries())
-		for weekGroupIndex, weekGroup := range weekGroups {
-			if weekGroupIndex > 0 {
-				t.CommitRow() // commit empty delimiting row between different weeks
+		monthGroups := groupEntries(&entryGroup{groupBy: month{}}, yearGroup.getEntries())
+		for monthGroupIndex, monthGroup := range monthGroups {
+			if monthGroupIndex > 0 {
+				t.CommitRow() // commit empty delimiting row between different months
 			}
-			dayGroups := groupEntries(&entryGroup{groupBy: day{}}, weekGroup.getEntries())
-			for dayGroupIndex, dayGroup := range dayGroups {
-				firstDayInWeek := dayGroupIndex == 0
-				firstEntryInWeek := firstDayInWeek
-				firstWeekInMonth := weekGroupIndex == 0
-				firstEntryInMonth := firstWeekInMonth && firstEntryInWeek
-				if firstEntryInWeek {
-					writeCellWeek(&t, weekGroup)
-				} else {
-					t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+			weekGroups := groupEntries(&entryGroup{groupBy: week{}}, monthGroup.getEntries())
+			for weekGroupIndex, weekGroup := range weekGroups {
+				if weekGroupIndex > 0 {
+					t.CommitRow() // commit empty delimiting row between different weeks
 				}
-				if firstEntryInMonth {
-					writeCellMonth(&t, monthGroup)
-				} else {
-					t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
-				}
-				writeCellDay(&t, dayGroup)
-
-				daySum := sumEntries(dayGroup.getEntries())
-				writeCellDuration(&t, daySum.duration)
-
-				lastDayInWeekGroup := dayGroupIndex == len(dayGroups)-1
-				lastEntryOfWeek := lastDayInWeekGroup
-				if lastEntryOfWeek {
-					weekSum := sumEntries(weekGroup.getEntries())
-					weekDuration := FormatDuration(weekSum.duration)
-					wkDay := time.Now().UTC().Weekday()
-					expectedHoursWorkedAfterToday := (time.Hour * 8) * time.Duration(wkDay)
-					_, curWeekWeek := time.Now().UTC().ISOWeek()
-					curWeek := fmt.Sprintf("%d", curWeekWeek)
-					if curWeek != weekGroup.String() {
-						e := weekGroup.getEntries()[0]
-						t := e.Start
-						startWeekdayInMonth := getFirstWeekdayOfISOWeekInMonth(t)
-						sub := int(math.Max(0, float64(startWeekdayInMonth)-1))
-						expectedHoursWorkedAfterToday = time.Hour * time.Duration(8*(5-sub))
+				dayGroups := groupEntries(&entryGroup{groupBy: day{}}, weekGroup.getEntries())
+				for dayGroupIndex, dayGroup := range dayGroups {
+					firstDayInWeek := dayGroupIndex == 0
+					firstEntryInWeek := firstDayInWeek
+					firstWeekInMonth := weekGroupIndex == 0
+					firstEntryInMonth := firstWeekInMonth && firstEntryInWeek
+					firstMonthInYear := monthGroupIndex == 0
+					firstEntryInYear := firstMonthInYear && firstEntryInMonth
+					if firstEntryInYear {
+						writeCellWeek(&t, yearGroup)
+					} else {
+						t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
 					}
-					cellStr := fmt.Sprintf("Σ Week %s = %s (%s)", weekGroup, weekDuration, FormatDuration(weekSum.duration-expectedHoursWorkedAfterToday))
-					t.WriteCellColor(cellStr, tableWeekSummaryColor)
+					if firstEntryInWeek {
+						writeCellWeek(&t, weekGroup)
+					} else {
+						t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+					}
+					if firstEntryInMonth {
+						writeCellMonth(&t, monthGroup)
+					} else {
+						t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+					}
+					writeCellDay(&t, dayGroup)
 
-					lastWeekInMonthGroup := weekGroupIndex == len(weekGroups)-1
-					lastEntryOfMonth := lastEntryOfWeek && lastWeekInMonthGroup
-					if lastEntryOfMonth {
-						workDays := 0
-						now := time.Now()
-						dt := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
-						end := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-						for {
-							if dt.Day() > end.Day() || dt.Month() != now.Month() || dt.Year() != now.Year() {
-								break
-							}
-							if dt.Weekday() != time.Saturday && dt.Weekday() != time.Sunday {
-								workDays++
-							}
-							dt = dt.Add(time.Hour * 24)
+					daySum := sumEntries(dayGroup.getEntries())
+					writeCellDuration(&t, daySum.duration)
+
+					lastDayInWeekGroup := dayGroupIndex == len(dayGroups)-1
+					lastEntryOfWeek := lastDayInWeekGroup
+					if lastEntryOfWeek {
+						weekSum := sumEntries(weekGroup.getEntries())
+						weekDuration := FormatDuration(weekSum.duration)
+						wkDay := time.Now().UTC().Weekday()
+						expectedHoursWorkedAfterToday := (time.Hour * 8) * time.Duration(wkDay)
+						_, curWeekWeek := time.Now().UTC().ISOWeek()
+						curWeek := fmt.Sprintf("%d", curWeekWeek)
+						if curWeek != weekGroup.String() {
+							e := weekGroup.getEntries()[0]
+							t := e.Start
+							startWeekdayInMonth := getFirstWeekdayOfISOWeekInMonth(t)
+							sub := int(math.Max(0, float64(startWeekdayInMonth)-1))
+							expectedHoursWorkedAfterToday = time.Hour * time.Duration(8*(5-sub))
 						}
+						cellStr := fmt.Sprintf("Σ Week %s = %s (%s)", weekGroup, weekDuration, FormatDuration(weekSum.duration-hoursInWeek))
+						t.WriteCellColor(cellStr, tableWeekSummaryColor)
 
-						hoursInMonthUpToNow := time.Hour * 8 * time.Duration(workDays)
+						lastWeekInMonthGroup := weekGroupIndex == len(weekGroups)-1
+						lastEntryOfMonth := lastEntryOfWeek && lastWeekInMonthGroup
+						if lastEntryOfMonth {
+							lastEntry := monthGroup.getEntries()[len(monthGroup.getEntries())-1]
+							start := time.Date(lastEntry.Start.Year(), lastEntry.Start.Month(), 1, 0, 0, 0, 0, time.UTC)
+							end := time.Date(lastEntry.Start.Year(), lastEntry.Start.Month(), lastEntry.Start.Day(), 23, 59, 59, 0, time.UTC)
+							workDays := countWorkDays(start, end)
+							hoursInMonthUpToNow := time.Hour * 8 * time.Duration(workDays)
 
-						t.CommitRow()
-						monthSum := sumEntries(monthGroup.getEntries())
-						monthDuration := FormatDuration(monthSum.duration)
-						diff := monthSum.duration - hoursInMonthUpToNow
-						endT := time.Now().Add(-diff)
-						cellStr := fmt.Sprintf("Σ Month %s = %s (%s) [%02d:%02d]", monthGroup, monthDuration, FormatDuration(diff), endT.Hour(), endT.Minute())
-						t.WriteColoredRow(
-							tableMonthSummaryColor,
-							tableCellEmptyText, // WEEK
-							tableCellEmptyText, // MONTH
-							tableCellEmptyText, // DAY
-							tableCellEmptyText, // DURATION
-							cellStr,
-						)
+							t.CommitRow()
+							monthSum := sumEntries(monthGroup.getEntries())
+							monthDuration := FormatDuration(monthSum.duration)
+							diff := monthSum.duration - hoursInMonthUpToNow
+							endT := time.Now().Add(-diff)
+							cellStr := fmt.Sprintf("Σ Month %s = %s (%s) [%02d:%02d]", monthGroup, monthDuration, FormatDuration(diff), endT.Hour(), endT.Minute())
+							t.WriteColoredRow(
+								tableMonthSummaryColor,
+								tableCellEmptyText, // YEAR
+								tableCellEmptyText, // WEEK
+								tableCellEmptyText, // MONTH
+								tableCellEmptyText, // DAY
+								tableCellEmptyText, // DURATION
+								cellStr,
+							)
+
+							lastMonthInYearGroup := monthGroupIndex == len(monthGroups)-1
+							lastEntryOfYear := lastEntryOfMonth && lastMonthInYearGroup
+							if lastEntryOfYear {
+								lastEntry := yearGroup.getEntries()[len(yearGroup.getEntries())-1]
+								start := time.Date(lastEntry.Start.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
+								end := time.Date(lastEntry.Start.Year(), lastEntry.Start.Month(), lastEntry.Start.Day(), 23, 59, 59, 0, time.UTC)
+								workDays := countWorkDays(start, end)
+
+								hoursInYearUpToNow := time.Hour * 8 * time.Duration(workDays)
+
+								t.CommitRow()
+								yearSum := sumEntries(yearGroup.getEntries())
+								yearDuration := FormatDuration(yearSum.duration)
+								diff := yearSum.duration - hoursInYearUpToNow
+								endT := time.Now().Add(-diff)
+								cellStr := fmt.Sprintf("Σ Year %s = %s (%s) [%02d:%02d (%02d/%02d)]", yearGroup, yearDuration, FormatDuration(diff), endT.Hour(), endT.Minute(), endT.Month(), endT.Day())
+								t.WriteColoredRow(
+									tableYearSummaryColor,
+									tableCellEmptyText, // YEAR
+									tableCellEmptyText, // WEEK
+									tableCellEmptyText, // MONTH
+									tableCellEmptyText, // DAY
+									tableCellEmptyText, // DURATION
+									cellStr,
+								)
+							}
+						}
 					}
+					t.CommitRow()
 				}
-				t.CommitRow()
 			}
 		}
 	}
 
-	sum := sumEntries(onlySumThisAtEnd.getEntries())
+	sum := sumEntries(currentYearYearGroup.getEntries())
 	t.CommitRow() // commit empty delimiting row
 	t.WriteColoredRow(tableSummaryColor,
+		tableCellEmptyText,           // YEAR
 		tableCellEmptyText,           // WEEK
 		tableCellEmptyText,           // MONTH
 		tableCellEmptyText,           // DAY

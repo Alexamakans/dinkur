@@ -185,6 +185,8 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 func outputFormatComplete(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
 	return []string{
 		"pretty\thuman readable and colored table formatting (default)",
+		"pretty\tcompact version of pretty, has fewer columns",
+		"work\toutputs in a format useful for my personal needs",
 		"json\ta single indented JSON array containing all entries",
 		"json-line\teach entry JSON object on a separate line",
 		"yaml\tYAML array of entries",

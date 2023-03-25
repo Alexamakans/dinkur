@@ -58,6 +58,11 @@ func writeCellEntryNameSearched(t *table, name string, reg *regexp.Regexp) {
 	t.WriteCellWidth(sb.String(), width)
 }
 
+func writeCellYear(t *table, y fmt.Stringer) {
+	yearStr := y.String()
+	t.WriteCellColor(yearStr, entryYearColor)
+}
+
 func writeCellMonth(t *table, m fmt.Stringer) {
 	monthStr := m.String()
 	t.WriteCellColor(monthStr, entryMonthColor)
