@@ -58,6 +58,7 @@ type group interface {
 	addEntry(entry dinkur.Entry)
 	getEntries() []dinkur.Entry
 	getGroupBy() groupable
+	start() time.Time
 }
 
 func newDate(year int, month time.Month, day int) date {
@@ -167,6 +168,10 @@ func (g *entryGroup) getEntries() []dinkur.Entry {
 
 func (g *entryGroup) getGroupBy() groupable {
 	return g.groupBy
+}
+
+func (g *entryGroup) start() time.Time {
+	return g.entries[0].Start
 }
 
 // groupEntries assumes the slice is already sorted on entry.Start
