@@ -336,7 +336,6 @@ func getISOTimeLastDayInSameMonthWeek(t time.Time) time.Time {
 	t = getISOTimeFirstDayInSameMonthWeek(t)
 	for t.Weekday() != lastWeekday && t.Month() == start.Month() {
 		t = t.Add(time.Hour * 24)
-		fmt.Println(t.Weekday().String(), t.Month().String(), t)
 	}
 	if t.Month() != start.Month() {
 		t = t.Add(time.Hour * -24)

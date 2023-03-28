@@ -457,7 +457,6 @@ func PrintEntryListWork(entries []dinkur.Entry) {
 	t.WriteColoredRow(tableHeaderColor, "YEAR", "WEEK", "MONTH", "DAY", "DURATION")
 	for yearGroupIndex, yearGroup := range yearGroups {
 		grpYearStr := yearGroup.String()
-		fmt.Println(grpYearStr, currentYearStr)
 		if grpYearStr != currentYearStr {
 			// Only list for current year
 			continue
