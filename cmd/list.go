@@ -78,7 +78,6 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 `, RootCmd.Name()),
 		Run: func(cmd *cobra.Command, args []string) {
 			connectClientOrExit()
-			rand.Seed(time.Now().UnixMicro())
 			now := time.Now()
 			search := dinkur.SearchEntry{
 				Limit:     flagLimit,
@@ -111,6 +110,12 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 				console.PrintEntryListCompact(entries)
 			case "work", "w":
 				console.PrintEntryListWork(entries)
+			case "time-reporting", "t":
+				searchStart, searchEnd := search.NameHighlightStart, search.NameHighlightEnd
+				if len(args) == 0 {
+					searchStart, searchEnd = "", ""
+				}
+				console.PrintEntryListTimeReporting(entries, searchStart, searchEnd)
 			case "json":
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")

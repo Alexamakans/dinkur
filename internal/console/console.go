@@ -71,6 +71,7 @@ var (
 	tableEmptyText         = "No results to display."
 	tableHeaderColor       = color.New(color.FgHiBlack)
 	tableSummaryColor      = color.New(color.FgHiBlack, color.Italic)
+	tableDaySummaryColor   = color.New(color.FgHiBlack)
 	tableWeekSummaryColor  = color.New(color.FgHiBlack)
 	tableMonthSummaryColor = color.New(color.FgHiBlack)
 	tableYearSummaryColor  = color.New(color.FgHiCyan)
@@ -246,6 +247,7 @@ func PrintEntryListSearched(entries []dinkur.Entry, searchStart, searchEnd strin
 						lastDayInWeekGroup := dayGroupIndex == len(dayGroups)-1
 						lastEntryInDayGroup := entryIndex == dayGroup.count()-1
 						lastEntryOfWeek := lastDayInWeekGroup && lastEntryInDayGroup
+
 						if lastEntryOfWeek {
 							weekSum := sumEntries(weekGroup.getEntries())
 							weekDuration := FormatDuration(weekSum.duration)
@@ -579,6 +581,115 @@ func PrintEntryListWork(entries []dinkur.Entry) {
 		tableCellEmptyText,           // MONTH
 		tableCellEmptyText,           // DAY
 		FormatDuration(sum.duration), // DURATION
+	)
+	t.Fprintln(stdout)
+}
+
+// PrintEntryListTimeReporting prints in a format specific to MY (Alexamakans) needs
+// for time reporting.
+func PrintEntryListTimeReporting(entries []dinkur.Entry, searchStart, searchEnd string) {
+	if len(entries) == 0 {
+		tableEmptyColor.Fprintln(stdout, tableEmptyText)
+		return
+	}
+	var reg *regexp.Regexp
+	if searchStart != "" || searchEnd != "" {
+		var err error
+		reg, err = regexp.Compile(fmt.Sprintf("%s(.*?)%s",
+			regexp.QuoteMeta(searchStart), regexp.QuoteMeta(searchEnd)))
+		if err != nil {
+			PrintFatal("Failed to compile highlight regex:", err)
+		}
+	}
+	var t table
+	t.SetSpacing("  ")
+	t.SetPrefix("  ")
+	t.WriteColoredRow(tableHeaderColor, "ID", "NAME", "YEAR", "WEEK", "MONTH", "DAY", "START", "END", "DURATION")
+	yearGroups := groupEntries(&entryGroup{groupBy: year{}}, entries)
+	for yearGroupIndex, yearGroup := range yearGroups {
+		if yearGroupIndex > 0 {
+			t.CommitRow() // commit empty delimiting row between different months
+		}
+		monthGroups := groupEntries(&entryGroup{groupBy: month{}}, yearGroup.getEntries())
+		for monthGroupIndex, monthGroup := range monthGroups {
+			if monthGroupIndex > 0 {
+				t.CommitRow() // commit empty delimiting row between different months
+			}
+			weekGroups := groupEntries(&entryGroup{groupBy: week{}}, monthGroup.getEntries())
+			for weekGroupIndex, weekGroup := range weekGroups {
+				if weekGroupIndex > 0 {
+					t.CommitRow() // commit empty delimiting row between different weeks
+				}
+				dayGroups := groupEntries(&entryGroup{groupBy: day{}}, weekGroup.getEntries())
+				for dayGroupIndex, dayGroup := range dayGroups {
+					for entryIndex, entry := range dayGroup.getEntries() {
+						writeCellEntryID(&t, entry.ID)
+						if reg != nil {
+							writeCellEntryNameSearched(&t, entry.Name, reg)
+						} else {
+							writeCellEntryName(&t, entry.Name)
+						}
+						firstEntryInDay := entryIndex == 0
+						firstDayInWeek := dayGroupIndex == 0
+						firstEntryInWeek := firstDayInWeek && firstEntryInDay
+						firstWeekInMonth := weekGroupIndex == 0
+						firstEntryInMonth := firstWeekInMonth && firstEntryInWeek
+						firstMonthInYear := monthGroupIndex == 0
+						firstEntryInYear := firstMonthInYear && firstEntryInMonth
+						if firstEntryInYear {
+							writeCellWeek(&t, yearGroup)
+						} else {
+							t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+						}
+						if firstEntryInWeek {
+							writeCellWeek(&t, weekGroup)
+						} else {
+							t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+						}
+						if firstEntryInMonth {
+							writeCellMonth(&t, monthGroup)
+						} else {
+							t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+						}
+						if firstEntryInDay {
+							writeCellDay(&t, dayGroup)
+						} else {
+							t.WriteCellColor(tableCellEmptyText, tableCellEmptyColor)
+						}
+						writeCellEntryStartEnd(&t, entry.Start, entry.End)
+						writeCellDuration(&t, entry.Elapsed())
+
+						lastEntryInDayGroup := entryIndex == dayGroup.count()-1
+						if lastEntryInDayGroup {
+							daySum := sumEntries(dayGroup.getEntries())
+							dayDuration := FormatDuration(daySum.duration)
+							cellStr := fmt.Sprintf("Σ Day %s = %s", dayGroup, dayDuration)
+							t.WriteCellColor(cellStr, tableDaySummaryColor)
+						}
+
+						t.CommitRow()
+					}
+				}
+			}
+		}
+	}
+
+	sum := sumEntries(entries)
+	t.CommitRow() // commit empty delimiting row
+	endStr := entryEndNilTextActive
+	if sum.end != nil {
+		endStr = sum.end.Format(timeFormatShort)
+	}
+	t.WriteColoredRow(tableSummaryColor,
+		tableCellEmptyText, // ID
+		fmt.Sprintf("TOTAL: %d entries", len(entries)), // NAME
+		tableCellEmptyText,                // YEAR
+		tableCellEmptyText,                // WEEK
+		tableCellEmptyText,                // MONTH
+		tableCellEmptyText,                // DAY
+		sum.start.Format(timeFormatShort), // START
+		endStr,                            // END
+		FormatDuration(sum.duration),      // DURATION
 	)
 	t.Fprintln(stdout)
 }
