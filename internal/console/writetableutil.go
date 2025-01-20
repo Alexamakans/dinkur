@@ -58,6 +58,12 @@ func writeCellEntryNameSearched(t *table, name string, reg *regexp.Regexp) {
 	t.WriteCellWidth(sb.String(), width)
 }
 
+func writeCellEntryNameStripSearched(t *table, name string, reg *regexp.Regexp) {
+	var sb strings.Builder
+	width := writeEntryNameStripSearched(&sb, name, reg)
+	t.WriteCellWidth(sb.String(), width)
+}
+
 func writeCellYear(t *table, y fmt.Stringer) {
 	yearStr := y.String()
 	t.WriteCellColor(yearStr, entryYearColor)
@@ -99,7 +105,7 @@ func writeCellEntryTimeSpanDuration(t *table, start time.Time, end *time.Time, d
 func writeCellEntryStartEnd(t *table, start time.Time, end *time.Time) {
 	writeCellTimeColor(t, start, timeFormatShort, entryStartColor)
 	if end != nil {
-		var endLayout = timeFormatShort
+		endLayout := timeFormatShort
 		d := day{}
 		if d.new(*end) != d.new(start) {
 			endLayout = timeFormatLong

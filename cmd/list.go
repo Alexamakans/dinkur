@@ -41,7 +41,7 @@ import (
 
 func init() {
 	var (
-		flagLimit       uint = 1000
+		flagLimit       uint = 100_000
 		flagStart            = &pflagutil.Time{}
 		flagEnd              = &pflagutil.Time{}
 		flagRange            = pflagutil.NewTimeRangePtr(timeutil.TimeSpanThisDay)

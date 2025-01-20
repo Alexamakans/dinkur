@@ -30,7 +30,7 @@ import (
 
 func writeTimeColor(w io.Writer, t time.Time, layout string, c *color.Color) int {
 	formatted := t.Format(layout)
-	c.Fprintf(w, formatted)
+	c.Fprint(w, formatted)
 	return len(formatted)
 }
 
@@ -42,6 +42,10 @@ func writeEntryID(w io.Writer, id uint) int {
 func writeEntryName(w io.Writer, name string) int {
 	entryNameColor.Fprintf(w, entryNameFormat, name)
 	return 2 + utf8.RuneCountInString(name)
+}
+
+func writeEntryNameStripSearched(w io.Writer, name string, reg *regexp.Regexp) int {
+	return writeEntryName(w, reg.ReplaceAllString(name, ""))
 }
 
 func writeEntryNameSearched(w io.Writer, name string, reg *regexp.Regexp) int {
@@ -93,7 +97,7 @@ func writeEntryTimeSpan(w io.Writer, start time.Time, end *time.Time, nowStr str
 		layout = timeFormatLong
 	}
 	startStr := start.Format(layout)
-	entryStartColor.Fprintf(w, startStr)
+	entryStartColor.Fprint(w, startStr)
 	entryTimeDelimColor.Fprint(w, " - ")
 	var (
 		endStr   string
@@ -109,7 +113,7 @@ func writeEntryTimeSpan(w io.Writer, start time.Time, end *time.Time, nowStr str
 		endColor = entryEndNilColor
 		endLen = utf8.RuneCountInString(nowStr)
 	}
-	endColor.Fprintf(w, endStr)
+	endColor.Fprint(w, endStr)
 	return len(startStr) + 3 + endLen
 }
 

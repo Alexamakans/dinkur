@@ -458,6 +458,7 @@ func PrintEntryListWork(entries []dinkur.Entry) {
 
 	t.WriteColoredRow(tableHeaderColor, "YEAR", "WEEK", "MONTH", "DAY", "DURATION")
 	for yearGroupIndex, yearGroup := range yearGroups {
+		workDaysWithEntries := 0
 		grpYearStr := yearGroup.String()
 		if grpYearStr != currentYearStr {
 			// Only list for current year
@@ -478,6 +479,9 @@ func PrintEntryListWork(entries []dinkur.Entry) {
 				}
 				dayGroups := groupEntries(&entryGroup{groupBy: day{}}, weekGroup.getEntries())
 				for dayGroupIndex, dayGroup := range dayGroups {
+					if dayGroup.getEntries()[0].Start.Weekday() != time.Saturday && dayGroup.getEntries()[0].Start.Weekday() != time.Sunday {
+						workDaysWithEntries++
+					}
 					firstDayInWeek := dayGroupIndex == 0
 					firstEntryInWeek := firstDayInWeek
 					firstWeekInMonth := weekGroupIndex == 0
@@ -520,7 +524,7 @@ func PrintEntryListWork(entries []dinkur.Entry) {
 							lastEntry := monthGroup.getEntries()[len(monthGroup.getEntries())-1]
 							start := time.Date(lastEntry.Start.Year(), lastEntry.Start.Month(), 1, 0, 0, 0, 0, time.UTC)
 							end := time.Date(lastEntry.Start.Year(), lastEntry.Start.Month(), lastEntry.Start.Day(), 23, 59, 59, 0, time.UTC)
-							workDays := countWorkDays(start, end)
+							workDays := countWorkDaysMonthSoFar(start, end)
 							hoursInMonthUpToNow := time.Hour * 8 * time.Duration(workDays)
 
 							t.CommitRow()
@@ -545,7 +549,7 @@ func PrintEntryListWork(entries []dinkur.Entry) {
 								lastEntry := yearGroup.getEntries()[len(yearGroup.getEntries())-1]
 								start := time.Date(lastEntry.Start.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
 								end := time.Date(lastEntry.Start.Year(), lastEntry.Start.Month(), lastEntry.Start.Day(), 23, 59, 59, 0, time.UTC)
-								workDays := countWorkDays(start, end)
+								workDays := countWorkDaysYearSoFar(start, end)
 
 								hoursInYearUpToNow := time.Hour * 8 * time.Duration(workDays)
 
@@ -563,6 +567,15 @@ func PrintEntryListWork(entries []dinkur.Entry) {
 									tableCellEmptyText, // DAY
 									tableCellEmptyText, // DURATION
 									cellStr,
+								)
+								t.WriteColoredRow(
+									tableYearSummaryColor,
+									tableCellEmptyText, // YEAR
+									tableCellEmptyText, // WEEK
+									tableCellEmptyText, // MONTH
+									tableCellEmptyText, // DAY
+									tableCellEmptyText, // DURATION
+									fmt.Sprintf("Entries on %d out of %d days", workDaysWithEntries, workDays),
 								)
 							}
 						}
@@ -625,7 +638,7 @@ func PrintEntryListTimeReporting(entries []dinkur.Entry, searchStart, searchEnd 
 					for entryIndex, entry := range dayGroup.getEntries() {
 						writeCellEntryID(&t, entry.ID)
 						if reg != nil {
-							writeCellEntryNameSearched(&t, entry.Name, reg)
+							writeCellEntryNameStripSearched(&t, entry.Name, reg)
 						} else {
 							writeCellEntryName(&t, entry.Name)
 						}

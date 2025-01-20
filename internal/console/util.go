@@ -21,13 +21,14 @@ package console
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/dinkur/dinkur/pkg/dinkur"
 )
 
-const firstWeekday = time.Sunday
-const lastWeekday = time.Saturday
+const firstWeekday = time.Monday
+const lastWeekday = time.Sunday
 
 // FormatDuration returns a formatted time.Duration in the format of
 // h:mm:ss.
@@ -201,14 +202,18 @@ type entrySum struct {
 	duration time.Duration
 }
 
-// sumEntries assumes the slice is already sorted on entry.Start
 func sumEntries(entries []dinkur.Entry) entrySum {
 	if len(entries) == 0 {
 		return entrySum{}
 	}
 	sum := entrySum{start: entries[0].Start}
 	var anyNilEnd bool
+	var prev = entries[0]
 	for _, t := range entries {
+		if prev.Start.After(t.Start) {
+			log.Fatalf("not sorted properly\n\tCurrent: (%v -> %v)\n\tPrev:    (%v -> %v)", t.Start, t.End, prev.Start, prev.End)
+		}
+		prev = t
 		sum.duration += t.Elapsed()
 		if t.End == nil {
 			anyNilEnd = true
@@ -292,15 +297,86 @@ func getFirstWeekdayOfISOWeekInMonth(t time.Time) time.Weekday {
 	return t.Weekday()
 }
 
-func countWorkDays(start, end time.Time) int {
-	return countWorkDaysSpecial(start, end, nil)
+func totalWorkDaysInYear(t time.Time) int {
+	workDays := 0
+	tm := time.Date(t.Year(), 1, 1, 12, 0, 0, 0, time.UTC)
+	for tm.Year() == t.Year() {
+		if tm.Weekday() != time.Saturday && tm.Weekday() != time.Sunday {
+			workDays++
+		}
+		tm = tm.Add(24 * time.Hour)
+	}
+	return workDays
+}
+
+func totalWorkDaysInMonth(t time.Time) int {
+	workDays := 0
+	tm := time.Date(t.Year(), t.Month(), 1, 12, 0, 0, 0, time.UTC)
+	for tm.Year() == t.Year() && tm.Month() == t.Month() {
+		if tm.Weekday() != time.Saturday && tm.Weekday() != time.Sunday {
+			workDays++
+		}
+		tm = tm.Add(24 * time.Hour)
+	}
+	return workDays
+}
+
+func totalWorkDaysInWeek(t time.Time) int {
+	return 5
+}
+
+func countWorkDaysYearSoFar(start, end time.Time) int {
+	if start.Year() != end.Year() {
+		log.Fatalf("tried to count over year boundary, %v - %v", start, end)
+	}
+	workDaysInYear := totalWorkDaysInYear(start)
+	workDays := countWorkDaysSpecial(start, end, func(s, _ time.Time) bool {
+		return s.Before(time.Now())
+	})
+	if workDays > workDaysInYear {
+		log.Fatalf("there should never be more than %d work days in a year, but we got %d", workDaysInYear, workDays)
+	}
+	return workDays
+}
+
+func countWorkDaysMonthSoFar(start, end time.Time) int {
+	if start.Month() != end.Month() {
+		log.Fatalf("tried to count over month boundary, %v - %v", start, end)
+	}
+	workDaysInMonth := totalWorkDaysInMonth(start)
+	workDays := countWorkDaysSpecial(start, end, func(s, _ time.Time) bool {
+		return s.Before(time.Now())
+	})
+	if workDays > workDaysInMonth {
+		log.Fatalf("there should never be more than %d work days in %v/%v, but we got %d", workDaysInMonth, workDays, start.Year(), start.Month())
+	}
+	return workDays
+}
+
+func countWorkDaysWeekSoFar(start, end time.Time) int {
+	startYear, startWeek := start.ISOWeek()
+	endYear, endWeek := end.ISOWeek()
+	if startYear != endYear || startWeek != endWeek {
+		log.Fatalf("tried to count over week boundary, %v - %v", start, end)
+	}
+	workDaysInWeek := totalWorkDaysInWeek(start)
+	workDays := countWorkDaysSpecial(start, end, func(s, _ time.Time) bool {
+		return s.Before(time.Now())
+	})
+	if workDays > workDaysInWeek {
+		log.Fatalf("there should never be more than %d work days in a week, but we got %d", workDaysInWeek, workDays)
+	}
+	return workDays
 }
 
 func countWorkDaysSpecial(start, end time.Time, f func(s, e time.Time) bool) int {
+	if !start.Before(end) && !start.Equal(end) {
+		log.Fatalf("start should be before or equal to end, but (start) %v > (end) %v", start, end)
+	}
 	workDays := 0
 	dt := start
 	for {
-		if (dt == end || dt.Before(end)) && (f == nil || f(dt, end)) {
+		if (dt.Equal(end) || dt.Before(end)) && (f == nil || f(dt, end)) {
 			if dt.Weekday() != time.Saturday && dt.Weekday() != time.Sunday {
 				workDays++
 			}
@@ -314,7 +390,9 @@ func countWorkDaysSpecial(start, end time.Time, f func(s, e time.Time) bool) int
 }
 
 func countWorkdaysInSameMonthWeek(start time.Time) int {
-	return countWorkDays(getISOTimeFirstDayInSameMonthWeek(start), getISOTimeLastDayInSameMonthWeek(start))
+	firstDay := getISOTimeFirstDayInSameMonthWeek(start)
+	lastDay := getISOTimeLastDayInSameMonthWeek(start)
+	return countWorkDaysWeekSoFar(firstDay, lastDay)
 }
 
 func getISOTimeFirstDayInSameMonthWeek(t time.Time) time.Time {
@@ -337,9 +415,11 @@ func getISOTimeLastDayInSameMonthWeek(t time.Time) time.Time {
 	for t.Weekday() != lastWeekday && t.Month() == start.Month() {
 		t = t.Add(time.Hour * 24)
 	}
+
 	if t.Month() != start.Month() {
 		t = t.Add(time.Hour * -24)
 	}
+
 	if t.Month() != start.Month() {
 		panic("failed, month is not equal")
 	}
