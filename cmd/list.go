@@ -49,7 +49,7 @@ func init() {
 		flagNoHighlight      = false
 	)
 
-	var listCmd = &cobra.Command{
+	listCmd := &cobra.Command{
 		Use:     `list [name search terms]`,
 		Args:    cobra.ArbitraryArgs,
 		Aliases: []string{"ls", "l"},
@@ -86,7 +86,7 @@ Week baselines sets the range Monday 00:00:00 - Sunday 24:59:59.
 				Shorthand: flagRange.TimeSpanShorthand(),
 				NameFuzzy: strings.Join(args, " "),
 			}
-			if strings.EqualFold(flagOutput, "pretty") && !flagNoHighlight {
+			if (strings.EqualFold(flagOutput, "pretty") && !flagNoHighlight) || strings.EqualFold(flagOutput, "t") {
 				search.NameHighlightStart = fmt.Sprintf(">!@%d#>", rand.Intn(255))
 				search.NameHighlightEnd = fmt.Sprintf("<!@%d#<", rand.Intn(255))
 			}

@@ -22,6 +22,7 @@ package console
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"regexp"
 	"strings"
@@ -210,7 +211,7 @@ func PrintEntryListSearched(entries []dinkur.Entry, searchStart, searchEnd strin
 					for entryIndex, entry := range dayGroup.getEntries() {
 						writeCellEntryID(&t, entry.ID)
 						if reg != nil {
-							writeCellEntryNameSearched(&t, entry.Name, reg)
+							writeCellEntryNameStripSearched(&t, entry.Name, reg)
 						} else {
 							writeCellEntryName(&t, entry.Name)
 						}
@@ -637,10 +638,11 @@ func PrintEntryListTimeReporting(entries []dinkur.Entry, searchStart, searchEnd 
 				for dayGroupIndex, dayGroup := range dayGroups {
 					for entryIndex, entry := range dayGroup.getEntries() {
 						writeCellEntryID(&t, entry.ID)
+						name := entry.Name[:int(math.Min(float64(len(entry.Name)), 120))]
 						if reg != nil {
-							writeCellEntryNameStripSearched(&t, entry.Name, reg)
+							writeCellEntryNameStripSearched(&t, name, reg)
 						} else {
-							writeCellEntryName(&t, entry.Name)
+							writeCellEntryName(&t, name)
 						}
 						firstEntryInDay := entryIndex == 0
 						firstDayInWeek := dayGroupIndex == 0
